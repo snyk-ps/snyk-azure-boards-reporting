@@ -1,0 +1,18 @@
+[project]
+name = "snyk-azure-boards-reporting"
+version = "0.1.0"
+description = "Export Snyk-tagged Azure DevOps work items for reporting"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pyyaml>=6.0.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

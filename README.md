@@ -19,6 +19,8 @@ This section provides a high-level overview of the project. It should clearly an
 - [Deployment](#deployment)
 - [More documentation](#more-documentation)
 
+
+
 ## Installation and setup
 
 Replace this section with real install steps for your application.
@@ -27,6 +29,8 @@ Replace this section with real install steps for your application.
 
 - **Python** 3.12+ and **[uv](https://docs.astral.sh/uv/getting-started/installation/)** for dependencies (`pyproject.toml`, `uv.lock`).
 - List any other required tools, services, or API access your application needs.
+
+
 
 ### Development / local installation
 
@@ -38,26 +42,27 @@ Use this path to run the application on your workstation.
 uv sync
 ```
 
-For tests and optional dev dependencies: **`uv sync --dev`** (see **[CONTRIBUTING.md](CONTRIBUTING.md)**).
+For tests and optional dev dependencies: `uv sync --dev` (see **[CONTRIBUTING.md](CONTRIBUTING.md)**).
 
-2. **Configure** the application per **[CONFIGURATION.md](CONFIGURATION.md)**. Load **secrets from environment variables** (for example **`SNYK_TOKEN`**); never commit credentials.
-
-3. **Verify** the install (adjust commands after you extend the CLI):
+1. **Configure** the application per **[CONFIGURATION.md](CONFIGURATION.md)**. Load **secrets from environment variables** (for example `SNYK_TOKEN`); never commit credentials.
+2. **Verify** the install (adjust commands after you extend the CLI):
 
 ```bash
 uv run python src/main.py --help
 uv run pytest
 ```
 
-Optional: build and run the root **`Dockerfile`** locally to mirror production; image and CI notes are in **[CONTRIBUTING.md](CONTRIBUTING.md)**.
+Optional: build and run the root `Dockerfile` locally to mirror production; image and CI notes are in **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 
 ### Deployment / production installation
 
 Use this path for production containers or scheduled jobs.
 
-1. **Image:** build from this repo's **`Dockerfile`**, or pull a release image from **[GitHub Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)** (`ghcr.io`) after you enable release workflows (see **[CONTRIBUTING.md § CI, releases, and containers](CONTRIBUTING.md#ci-releases-and-containers)**).
+1. **Image:** build from this repo's `Dockerfile`, or pull a release image from **[GitHub Container Registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)** (`ghcr.io`) after you enable release workflows (see **[CONTRIBUTING.md § CI, releases, and containers](CONTRIBUTING.md#ci-releases-and-containers)**).
 2. **Secrets:** inject via your platform's secret store, not in the image or committed config.
 3. **Configuration:** mount or supply non-secret settings per **[CONFIGURATION.md](CONFIGURATION.md)**.
+
+
 
 ## Configuration
 
@@ -65,15 +70,40 @@ Use this path for production containers or scheduled jobs.
 - Precedence, file keys, env vars, and CLI flags: **[CONFIGURATION.md](CONFIGURATION.md)**.
 - Replace this bullet list with a short summary of how operators configure your application in production.
 
+
+
 ## Usage
 
-Replace with how to run and use the application. From the repository root, after `uv sync`, the scaffold entry point is:
+From the repository root, after `uv sync --extra dev`:
 
 ```bash
 uv run python src/main.py --help
 ```
 
-Adjust after you add arguments or package the app. Command-level detail belongs in **[CONFIGURATION.md](CONFIGURATION.md)**.
+
+
+### Azure DevOps smoke
+
+Verify read-only Azure DevOps access and print normalized work items as JSON lines:
+
+```bash
+export AZURE_DEVOPS_PAT='***'
+
+uv run python src/main.py azure-devops-smoke wiql \
+  --org test-org \
+  --project snykDemoProject \
+  --filter-tag Snyk
+```
+
+Or load defaults from the sample config:
+
+```bash
+uv run python src/main.py azure-devops-smoke wiql \
+  --config data/reporting.sample.yaml \
+  --project snykDemoProject
+```
+
+Command-level detail: **[CONFIGURATION.md](CONFIGURATION.md)**.
 
 ## Features
 
@@ -97,13 +127,16 @@ Common errors, known issues, FAQ, and debugging tips. Link to **[CONFIGURATION.m
 
 Where and how you deploy in production: environment variables, secrets, and runtime config.
 
-For containers, images built by **`release.yml`** are published to **`ghcr.io`** (GitHub Container Registry) after you delete **`.github/template`**, add **`VERSION`**, and tag releases. Pull and run that image in your environment or wire the registry into Kubernetes, ECS, or another orchestrator.
+For containers, images built by `release.yml` are published to `ghcr.io` (GitHub Container Registry) after you delete `.github/template`, add `VERSION`, and tag releases. Pull and run that image in your environment or wire the registry into Kubernetes, ECS, or another orchestrator.
 
 Sizing, Dockerfile stages, and GitHub Actions: **[CONTRIBUTING.md § CI, releases, and containers](CONTRIBUTING.md#ci-releases-and-containers)**.
 
 ## More documentation
 
-| Document | Audience |
-| -------- | -------- |
-| **[CONFIGURATION.md](CONFIGURATION.md)** | Full configuration reference: files, env vars, CLI flags, commands. |
-| **[CONTRIBUTING.md](CONTRIBUTING.md)** | Template setup, project layout, OpenSpec, tests, CI/Docker, **`TEMPLATE_VERSION`**. |
+
+| Document                                 | Audience                                                                        |
+| ---------------------------------------- | ------------------------------------------------------------------------------- |
+| **[CONFIGURATION.md](CONFIGURATION.md)** | Full configuration reference: files, env vars, CLI flags, commands.             |
+| **[CONTRIBUTING.md](CONTRIBUTING.md)**   | Template setup, project layout, OpenSpec, tests, CI/Docker, `TEMPLATE_VERSION`. |
+
+
