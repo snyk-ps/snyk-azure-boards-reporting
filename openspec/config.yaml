@@ -1,0 +1,37 @@
+schema: spec-driven
+
+# Draft project context — copy to openspec/config.yaml when bootstrapping snyk-azure-boards-reporting.
+context: |
+  Product: Export Snyk-tagged Azure DevOps work items to Elasticsearch for Kibana reporting.
+  Read-only Azure DevOps access; does not create, update, or close work items.
+
+  Upstream dependency: snyk-azure-boards-integration writes System.Tags (operator + managed
+  severity/type tags), System.State, and optional mapping rows in Azure Table Storage /
+  SQLite. Tag vocabulary is normative in openspec/specs/upstream-integration-contract/spec.md
+  (contract_version: 1).
+
+  Target reporting dimensions:
+  - Work item creation date (System.CreatedDate from ADO)
+  - Resolution / closure date (Microsoft.VSTS.Common.ClosedDate / ResolvedDate, with fallback)
+  - Current status (System.State)
+  - Tags parsed into severity and finding type (Snyk-Severity-*, Snyk-Type-*)
+
+  Stack: Python 3.12+, uv, argparse CLI; scheduled export job; Elasticsearch bulk ingest;
+  Kibana dashboards (operator-managed or saved objects — v2 capability).
+
+  APIs: Azure DevOps WIT api-version 7.1 — list projects, WIQL query, work items batch.
+  PAT from environment (AZURE_DEVOPS_PAT). Optional mapping store read (same schema as sync repo).
+
+  Secrets via environment variables only; never commit or log credentials.
+
+rules:
+  proposal:
+    - Use R1-FR-* requirement IDs; cite sync repo P2-FR-* only as upstream dependencies.
+    - State contract_version when upstream-integration-contract changes.
+  design:
+    - Document WIQL → batch → normalize → bulk upsert flow and document _id strategy.
+    - Prefer stdlib HTTP for Elasticsearch bulk when possible.
+  tasks:
+    - Keep tasks small; include unit tests for new public/protected Python surfaces.
+  specs:
+    - Each Requirement SHALL include at least one Scenario block.
