@@ -32,4 +32,4 @@
 
 ## 6. Archive prep
 
-- [ ] 6.1 Merge `openspec/specs/` only when archiving: do **not** copy or merge `openspec/changes/build-ado-reporting-client/specs/*.md` into `openspec/specs/` during implementation; run `openspec archive build-ado-reporting-client` when complete
+- [x] 6.1 Merge `openspec/specs/` only when archiving: do **not** copy or merge `openspec/changes/build-ado-reporting-client/specs/*.md` into `openspec/specs/` during implementation; run `openspec archive build-ado-reporting-client` when complete
