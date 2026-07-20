@@ -27,4 +27,4 @@
 
 ## 6. Archive prep
 
-- [ ] 6.1 Merge `openspec/specs/` only when archiving: do **not** copy or merge `openspec/changes/reporting-document-model/specs/*.md` into `openspec/specs/` during implementation; run `openspec archive reporting-document-model` when complete
+- [x] 6.1 Merge `openspec/specs/` only when archiving: do **not** copy or merge `openspec/changes/reporting-document-model/specs/*.md` into `openspec/specs/` during implementation; run `openspec archive reporting-document-model` when complete
