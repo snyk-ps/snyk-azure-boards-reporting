@@ -10,6 +10,8 @@ import yaml
 from integrations.azure_devops_reporting.errors import ConfigurationError
 from integrations.azure_devops_reporting.models import DEFAULT_FILTER_TAG
 
+DEFAULT_CLOSED_STATES: tuple[str, ...] = ("Closed", "Done")
+
 
 @dataclass(frozen=True)
 class AzureDevOpsOrganizationConfig:
@@ -25,6 +27,7 @@ class ReportingAppConfig:
     """Non-secret reporting application configuration."""
 
     organizations: list[AzureDevOpsOrganizationConfig]
+    closed_states: tuple[str, ...]
 
 
 def load_config(path: str | Path) -> ReportingAppConfig:
@@ -75,7 +78,35 @@ def load_config(path: str | Path) -> ReportingAppConfig:
             )
         )
 
-    return ReportingAppConfig(organizations=organizations)
+    closed_states = _load_closed_states(raw.get("reporting"))
+
+    return ReportingAppConfig(
+        organizations=organizations,
+        closed_states=closed_states,
+    )
+
+
+def _load_closed_states(reporting: object) -> tuple[str, ...]:
+    """Parse reporting.closed_states with defaults per R1-FR-CFG-3."""
+    if reporting is None:
+        return DEFAULT_CLOSED_STATES
+    if not isinstance(reporting, dict):
+        raise ConfigurationError("reporting section must be a mapping")
+
+    closed_states_raw = reporting.get("closed_states")
+    if closed_states_raw is None:
+        return DEFAULT_CLOSED_STATES
+    if not isinstance(closed_states_raw, list) or not closed_states_raw:
+        raise ConfigurationError("reporting.closed_states must be a non-empty list")
+
+    closed_states = tuple(
+        str(state).strip()
+        for state in closed_states_raw
+        if str(state).strip()
+    )
+    if not closed_states:
+        raise ConfigurationError("reporting.closed_states must not be blank")
+    return closed_states
 
 
 def first_organization(config: ReportingAppConfig) -> AzureDevOpsOrganizationConfig:
