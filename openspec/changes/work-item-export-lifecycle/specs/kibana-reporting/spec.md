@@ -5,7 +5,7 @@
 Operator documentation in **`README.md`** SHALL describe manual minimum Kibana setup sufficient to satisfy R1-FR-KIB-2 (work item detail table), including:
 
 1. Creating a **data view** on the configured index with time field `work_item.created_at`
-2. Creating a **Lens table** with the columns defined in R1-FR-KIB-2
+2. Creating a **Discover saved search** with the columns defined in R1-FR-KIB-2 (not a Lens table — Lens aggregates data and does not suit a full searchable work item list)
 3. Optional global filters per R1-FR-KIB-1
 
 #### Scenario: Operator follows README after first export

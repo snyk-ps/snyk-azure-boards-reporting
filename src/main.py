@@ -2,7 +2,7 @@
 
 import argparse
 
-from commands import azure_devops_smoke, elasticsearch_smoke, output
+from commands import azure_devops_smoke, elasticsearch_smoke, export, output
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -14,6 +14,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     azure_devops_smoke.register_subcommand(subparsers)
     elasticsearch_smoke.register_subcommand(subparsers)
+    export.register_subcommand(subparsers)
     output.register_subcommand(subparsers)
 
     return parser

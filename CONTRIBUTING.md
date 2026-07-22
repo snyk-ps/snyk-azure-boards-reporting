@@ -77,6 +77,7 @@ Unit tests live under **`tests/`** and **mirror the package path under `src/`**,
 | ------------- | ------------- |
 | `src/snyk/client.py` | `tests/snyk/test_client.py` |
 | `src/commands/sync.py` | `tests/commands/test_sync.py` |
+| `src/export/runner.py` | `tests/export/test_runner.py` |
 | `src/main.py` | `tests/test_main.py` |
 
 Name test files `test_<module>.py` (pytest discovers `test_*.py` by default). Import application code as you would at runtime with `src` on the path—for example `from snyk.client import ...`, not `from src.snyk.client import ...`.
@@ -97,10 +98,11 @@ Name test files `test_<module>.py` (pytest discovers `test_*.py` by default). Im
 | Path | Purpose |
 | ---- | ------- |
 | `src/commands/` | CLI commands and `argparse` entry points that wire user input to application logic. |
-| `src/common/` | Shared helpers, types, and utilities used across packages (not tied to Snyk or a single integration). |
 | `src/config/` | Configuration loading, defaults, and environment-driven settings. |
-| `src/integrations/` | Third-party systems outside Snyk (for example GitHub): API clients, auth, and adapters that call external HTTP APIs. |
-| `src/snyk/` | Snyk-specific code: the Snyk REST or v1 APIs, Snyk CLI usage, and anything that speaks Snyk's own surfaces. |
+| `src/export/` | Export orchestration: scope resolution and ADO → transform → Elasticsearch pipeline. |
+| `src/integrations/` | Third-party systems outside Snyk (for example Azure DevOps, Elasticsearch): API clients, auth, and adapters. |
+| `src/observability/` | Structured NDJSON audit logging for export runs. |
+| `src/reporting/` | Reporting document transform (normalized JSON shape for Elasticsearch). |
 
 Entry point: **`src/main.py`**.
 

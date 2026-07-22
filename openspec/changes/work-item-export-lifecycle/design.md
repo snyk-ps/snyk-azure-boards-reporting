@@ -114,7 +114,7 @@ Single work item transform failure (missing required field) SHALL increment `doc
 After a successful export:
 
 1. **Data view**: Stack Management → Data Views → Create → index pattern `snyk-ado-work-items` (or configured name) → time field **`work_item.created_at`**
-2. **Lens table** (R1-FR-KIB-2 columns): `work_item.id`, `work_item.title`, `work_item.project`, `work_item.status`, `tags.severity`, `tags.finding_type`, `work_item.created_at`, `work_item.closed_at`, `work_item.days_to_close`; sort by `work_item.created_at` desc
+2. **Discover saved search** (R1-FR-KIB-2 columns): `work_item.id`, `work_item.title`, `work_item.project`, `work_item.status`, `tags.severity`, `tags.finding_type`, `work_item.created_at`, `work_item.closed_at`, `work_item.days_to_close`; sort by `work_item.created_at` desc; document that time filtering uses `work_item.created_at`, not `export.exported_at`
 3. **Optional filters** (R1-FR-KIB-1): organization, project, severity, finding type, status
 
 Document that null severity/type is expected when tags omit managed tags.

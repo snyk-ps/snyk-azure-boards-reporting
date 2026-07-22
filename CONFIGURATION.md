@@ -4,11 +4,11 @@ Operator reference for configuration files, environment variables, and CLI flags
 
 ## Precedence
 
-For smoke and future export commands, resolution order is:
+For smoke and export commands, resolution order is:
 
 1. Built-in defaults (for example `filter_tag: Snyk`)
-2. Configuration file (`--config` or future `REPORTING_APP_CONFIG`)
-3. **CLI arguments** (highest precedence for org/project/filter tag on smoke)
+2. Configuration file (`--config`, else `REPORTING_APP_CONFIG`, else container default `/config/reporting.yaml`)
+3. **CLI arguments** (highest precedence for org/project/filter tag)
 
 Secrets always come from environment variables only. They are never read from YAML or CLI flags.
 
@@ -33,7 +33,15 @@ azure_devops:
 | `elasticsearch.index_name` | string | `snyk-ado-work-items` | Target Elasticsearch index for export and smoke |
 | `elasticsearch.auto_create_index` | boolean | `true` | Create index with normative mappings when missing |
 
-The sample file also documents `reporting.closed_states` for document transform and future export.
+The sample file also documents `reporting.closed_states` for document transform and export.
+
+Config path resolution for **`export`**:
+
+1. `--config <path>` when provided
+2. `REPORTING_APP_CONFIG` when set
+3. `/config/reporting.yaml` (container default)
+
+Export fails fast when the resolved path is not a readable file.
 
 ## Environment variables
 
@@ -45,7 +53,7 @@ The sample file also documents `reporting.closed_states` for document transform 
 | **`ELASTICSEARCH_URL`** | For Elasticsearch smoke and export | Cluster endpoint (for example `https://example.es.cloud:9243`). Fail fast when unset. Never log. |
 | **`ELASTICSEARCH_API_KEY`** | For Elasticsearch smoke and export (preferred) | API key auth (**secret**). Sent as `Authorization: ApiKey …`. Never log. |
 | **`ELASTICSEARCH_USERNAME`** / **`ELASTICSEARCH_PASSWORD`** | Alternative to API key | Basic auth when API key is not used. Never log. |
-| **`REPORTING_APP_CONFIG`** | Optional | Default reporting YAML path for future export (not used by smoke unless `--config` is omitted in a later command). |
+| **`REPORTING_APP_CONFIG`** | Optional | Default reporting YAML path when `--config` is omitted on **`export`** |
 
 ## CLI flags and parameters
 
@@ -55,9 +63,23 @@ Run:
 
 ```bash
 uv run python src/main.py --help
+uv run python src/main.py export --help
 uv run python src/main.py azure-devops-smoke wiql --help
 uv run python src/main.py elasticsearch-smoke index-one --help
 ```
+
+### `export`
+
+| Flag / parameter | Default | Purpose |
+| ---------------- | ------- | ------- |
+| `--config` | `REPORTING_APP_CONFIG` or `/config/reporting.yaml` | Path to reporting YAML |
+| `--org` | From config when omitted | Restrict export to one ADO organization |
+| `--project` | All configured or listed projects when omitted | Restrict export to one ADO project |
+| `--filter-tag` | Config value or `Snyk` | WIQL tag filter override |
+
+When neither `--org` nor `--project` is set, export processes every `azure_devops.organizations[]` entry. Empty `projects: []` enumerates all ADO projects in that org.
+
+Stdout is NDJSON audit logs (`integration_http`, `export_summary`). See **[README § Kibana setup](README.md#kibana-setup)** for visualizing exported data.
 
 ### `azure-devops-smoke wiql`
 
@@ -169,6 +191,34 @@ PUT snyk-ado-work-items
 
 For the full mapping including optional `snyk.*` enrich fields, use the checked-in JSON artifact.
 
+### Export (ADO → Elasticsearch)
+
+Discover Snyk-tagged work items, normalize to reporting documents, and bulk upsert into Elasticsearch. Requires **`AZURE_DEVOPS_PAT`**, **`ELASTICSEARCH_URL`**, and Elasticsearch credentials.
+
+```bash
+export AZURE_DEVOPS_PAT='***'
+export ELASTICSEARCH_URL='https://***'
+export ELASTICSEARCH_API_KEY='***'
+
+uv run python src/main.py export \
+  --config data/reporting.sample.yaml \
+  --project snykDemoProject
+```
+
+Narrow a dev run with CLI overrides:
+
+```bash
+uv run python src/main.py export \
+  --config data/reporting.sample.yaml \
+  --org test-org \
+  --project snykDemoProject \
+  --filter-tag Snyk
+```
+
+On completion, stdout includes one **`export_summary`** NDJSON line with `work_items_discovered`, `documents_written`, `documents_failed`, and `export_outcome`. Exit code `0` when `export_outcome` is `success`; `1` on partial/failure or configuration/auth errors.
+
+Kibana data view and Discover saved search setup: **[README § Kibana setup](README.md#kibana-setup)**.
+
 ### `output`
 
 Read normalized JSONL from stdin or a file and print it again, optionally with `--pretty`.
@@ -179,4 +229,4 @@ Read normalized JSONL from stdin or a file and print it again, optionally with `
 - Missing or empty **`ELASTICSEARCH_URL`** fails before any Elasticsearch HTTP request.
 - HTTP **401** and **403** are treated as authentication failures with safe error messages.
 - Transient **5xx** and **429** responses retry with bounded exponential backoff.
-- Smoke stdout is normalized work item JSONL only; it is not export audit NDJSON.
+- **`export`** stdout is NDJSON audit logs (`integration_http`, `export_summary`); smoke stdout is normalized work item JSONL only.
