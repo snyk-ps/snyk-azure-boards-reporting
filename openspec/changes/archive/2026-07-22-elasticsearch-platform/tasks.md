@@ -44,4 +44,4 @@
 
 ## 9. Archive prep
 
-- [ ] 9.1 Merge `openspec/specs/` only when archiving: do **not** copy or merge `openspec/changes/elasticsearch-platform/specs/*.md` into `openspec/specs/` during implementation; run `openspec archive elasticsearch-platform` when complete
+- [x] 9.1 Merge `openspec/specs/` only when archiving: do **not** copy or merge `openspec/changes/elasticsearch-platform/specs/*.md` into `openspec/specs/` during implementation; run `openspec archive elasticsearch-platform` when complete
