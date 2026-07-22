@@ -10,9 +10,7 @@ Define **dashboard and visualization requirements** for operators using Kibana a
 
 - Index **`snyk-ado-work-items`** (or configured name) populated per `reporting-document-model`.
 - Field mappings applied per `elasticsearch-platform`.
-
 ## Requirements
-
 ### Requirement: Global filters (R1-FR-KIB-1)
 
 Dashboards SHALL provide filters for:
@@ -130,3 +128,17 @@ Kibana capability does NOT require:
 - Unit tests in Python for dashboard JSON.
 - Embedded Kibana iframes in other applications.
 - Real-time refresh faster than export schedule (near-real-time is bounded by export cadence).
+
+### Requirement: Minimum Kibana setup documented in README (R1-FR-KIB-9)
+
+Operator documentation in **`README.md`** SHALL describe manual minimum Kibana setup sufficient to satisfy R1-FR-KIB-2 (work item detail table), including:
+
+1. Creating a **data view** on the configured index with time field `work_item.created_at`
+2. Creating a **Discover saved search** with the columns defined in R1-FR-KIB-2 (not a Lens table — Lens aggregates data and does not suit a full searchable work item list)
+3. Optional global filters per R1-FR-KIB-1
+
+#### Scenario: Operator follows README after first export
+
+- **WHEN** an operator completes export and follows README Kibana steps
+- **THEN** they SHALL be able to view sortable work item rows with severity, status, and closure columns without importing saved-object NDJSON from the repository
+

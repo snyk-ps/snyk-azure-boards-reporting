@@ -5,9 +5,7 @@
 Define structured logging and export-run audit events for **snyk-azure-boards-reporting**, mirroring patterns from upstream [snyk-azure-boards-integration](https://github.com/snyk-ps/snyk-azure-boards-integration) `observability` capability (NDJSON stdout, safe HTTP audit).
 
 Functional requirements use **`R1-FR-OBS-*`** IDs.
-
 ## Requirements
-
 ### Requirement: NDJSON structured CLI logging (R1-FR-OBS-1)
 
 The **`export`** CLI SHALL emit **NDJSON** on **standard output**: one JSON object per line with:
@@ -112,3 +110,13 @@ This capability does NOT require:
 - OpenTelemetry custom metrics (v1).
 - Application Insights / Log Analytics integration (operators may ship stdout to those platforms).
 - Snyk API HTTP audit (export does not call Snyk).
+
+### Requirement: Export command wires audit logging (R1-FR-OBS-6)
+
+The **`export`** command implementation SHALL emit `integration_http` audit records per R1-FR-OBS-2 for terminal ADO and Elasticsearch HTTP requests, and exactly one `export_summary` record per R1-FR-OBS-3 at run completion.
+
+#### Scenario: Summary includes discovered and failed counts
+
+- **WHEN** export discovers 10 work items and 1 bulk line fails
+- **THEN** `export_summary` SHALL report `work_items_discovered=10`, `documents_written=9`, `documents_failed=1`, and `export_outcome=partial`
+

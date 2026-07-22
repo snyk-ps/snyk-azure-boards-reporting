@@ -3,9 +3,7 @@
 ## Purpose
 
 Define operator YAML for the reporting export application: Azure DevOps scope, WIQL filter tag, closed-state detection, optional mapping store, and Elasticsearch index settings. **Secrets stay in environment variables only.**
-
 ## Requirements
-
 ### Requirement: Configuration file and precedence (R1-FR-CFG-1)
 
 The application SHALL load non-secret policy from a YAML file. Precedence:
@@ -201,3 +199,13 @@ When the `elasticsearch` section is omitted, the loader SHALL default to `index_
 
 - **WHEN** YAML contains only `azure_devops` and omits `elasticsearch`
 - **THEN** `index_name` SHALL default to `snyk-ado-work-items` and `auto_create_index` SHALL default to `true`
+
+### Requirement: Export resolves default config path (R1-FR-CFG-11)
+
+When **`export`** runs without **`--config`**, the application SHALL load configuration from **`REPORTING_APP_CONFIG`** when set, else the documented container default path (for example `/config/reporting.yaml`).
+
+#### Scenario: Env default config
+
+- **WHEN** `REPORTING_APP_CONFIG=data/local.yaml` is set and export runs without `--config`
+- **THEN** export SHALL load `data/local.yaml`
+
