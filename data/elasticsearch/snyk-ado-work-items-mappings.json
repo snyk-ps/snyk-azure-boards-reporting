@@ -1,0 +1,51 @@
+{
+  "properties": {
+    "work_item": {
+      "properties": {
+        "id": { "type": "keyword" },
+        "organization": { "type": "keyword" },
+        "project": { "type": "keyword" },
+        "title": {
+          "type": "text",
+          "fields": {
+            "keyword": { "type": "keyword" }
+          }
+        },
+        "status": { "type": "keyword" },
+        "area_path": { "type": "keyword" },
+        "created_at": { "type": "date" },
+        "changed_at": { "type": "date" },
+        "closed_at": { "type": "date" },
+        "days_to_close": { "type": "float" }
+      }
+    },
+    "tags": {
+      "properties": {
+        "raw": { "type": "keyword" },
+        "operator": { "type": "keyword" },
+        "severity": { "type": "keyword" },
+        "finding_type": { "type": "keyword" }
+      }
+    },
+    "export": {
+      "properties": {
+        "run_id": { "type": "keyword" },
+        "exported_at": { "type": "date" }
+      }
+    },
+    "snyk": {
+      "properties": {
+        "group_id": { "type": "keyword" },
+        "org_id": { "type": "keyword" },
+        "project_id": { "type": "keyword" },
+        "issue_id": { "type": "keyword" },
+        "status": { "type": "keyword" },
+        "project_name": { "type": "keyword" },
+        "project_origin": { "type": "keyword" },
+        "excluded": { "type": "boolean" },
+        "exclusion_reason": { "type": "keyword" },
+        "mapping_updated_at": { "type": "date" }
+      }
+    }
+  }
+}

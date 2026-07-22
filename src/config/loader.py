@@ -11,6 +11,15 @@ from integrations.azure_devops_reporting.errors import ConfigurationError
 from integrations.azure_devops_reporting.models import DEFAULT_FILTER_TAG
 
 DEFAULT_CLOSED_STATES: tuple[str, ...] = ("Closed", "Done")
+DEFAULT_INDEX_NAME = "snyk-ado-work-items"
+
+
+@dataclass(frozen=True)
+class ElasticsearchConfig:
+    """Elasticsearch index settings from YAML."""
+
+    index_name: str
+    auto_create_index: bool
 
 
 @dataclass(frozen=True)
@@ -28,6 +37,7 @@ class ReportingAppConfig:
 
     organizations: list[AzureDevOpsOrganizationConfig]
     closed_states: tuple[str, ...]
+    elasticsearch: ElasticsearchConfig
 
 
 def load_config(path: str | Path) -> ReportingAppConfig:
@@ -79,10 +89,12 @@ def load_config(path: str | Path) -> ReportingAppConfig:
         )
 
     closed_states = _load_closed_states(raw.get("reporting"))
+    elasticsearch = _load_elasticsearch(raw.get("elasticsearch"))
 
     return ReportingAppConfig(
         organizations=organizations,
         closed_states=closed_states,
+        elasticsearch=elasticsearch,
     )
 
 
@@ -107,6 +119,31 @@ def _load_closed_states(reporting: object) -> tuple[str, ...]:
     if not closed_states:
         raise ConfigurationError("reporting.closed_states must not be blank")
     return closed_states
+
+
+def _load_elasticsearch(elasticsearch: object) -> ElasticsearchConfig:
+    """Parse elasticsearch section with defaults per R1-FR-CFG-4."""
+    if elasticsearch is None:
+        return ElasticsearchConfig(
+            index_name=DEFAULT_INDEX_NAME,
+            auto_create_index=True,
+        )
+    if not isinstance(elasticsearch, dict):
+        raise ConfigurationError("elasticsearch section must be a mapping")
+
+    index_name_raw = elasticsearch.get("index_name", DEFAULT_INDEX_NAME)
+    index_name = str(index_name_raw).strip()
+    if not index_name:
+        raise ConfigurationError("elasticsearch.index_name must not be blank")
+
+    auto_create_index_raw = elasticsearch.get("auto_create_index", True)
+    if not isinstance(auto_create_index_raw, bool):
+        raise ConfigurationError("elasticsearch.auto_create_index must be a boolean")
+
+    return ElasticsearchConfig(
+        index_name=index_name,
+        auto_create_index=auto_create_index_raw,
+    )
 
 
 def first_organization(config: ReportingAppConfig) -> AzureDevOpsOrganizationConfig:
