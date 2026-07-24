@@ -18,6 +18,14 @@ WORK_ITEM_BATCH_FIELDS: tuple[str, ...] = (
     "Microsoft.VSTS.Common.ResolvedDate",
     "System.TeamProject",
     "System.AreaPath",
+    "System.AssignedTo",
+    "System.Parent",
+)
+
+PARENT_TITLE_BATCH_FIELDS: tuple[str, ...] = (
+    "System.Id",
+    "System.Title",
+    "System.State",
 )
 
 MAX_BATCH_SIZE = 200

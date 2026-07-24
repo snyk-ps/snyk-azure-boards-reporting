@@ -136,10 +136,14 @@ Use **Discover** (not Lens) for a full, searchable list of work items. Lens tabl
 | ------ | ----- |
 | Work item ID | `work_item.id` |
 | Title | `work_item.title` |
+| Assignee | `work_item.assignee` |
 | Project | `work_item.project` |
 | Status | `work_item.status` |
 | Severity | `tags.severity` |
 | Finding type | `tags.finding_type` |
+| Story | `work_item.story_name` |
+| Story link | `work_item.story_url` |
+| Work item link | `work_item.url` |
 | Created | `work_item.created_at` |
 | Closed | `work_item.closed_at` |
 | Days to close | `work_item.days_to_close` |

@@ -13,3 +13,7 @@ def test_load_index_mappings_contains_required_field_types() -> None:
         properties["work_item"]["properties"]["title"]["fields"]["keyword"]["type"]
         == "keyword"
     )
+    assert properties["work_item"]["properties"]["assignee"]["type"] == "keyword"
+    assert properties["work_item"]["properties"]["url"]["type"] == "keyword"
+    assert properties["work_item"]["properties"]["story_name"]["type"] == "keyword"
+    assert properties["work_item"]["properties"]["story_url"]["type"] == "keyword"

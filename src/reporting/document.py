@@ -11,6 +11,7 @@ from reporting.closure import resolve_closed_at
 from reporting.dates import compute_days_to_close, format_ado_datetime, parse_ado_datetime
 from reporting.models import ReportingDocumentDict, TransformContext, TransformError
 from reporting.tags import parse_system_tags
+from reporting.urls import build_ado_work_item_url
 
 _REQUIRED_FIELDS = (
     "System.State",
@@ -19,6 +20,34 @@ _REQUIRED_FIELDS = (
     "System.TeamProject",
     "System.Title",
 )
+
+
+def _parse_assignee_display_name(fields: dict[str, Any]) -> str | None:
+    assigned_to = fields.get("System.AssignedTo")
+    if not isinstance(assigned_to, dict):
+        return None
+    display_name = assigned_to.get("displayName")
+    if display_name is None or str(display_name).strip() == "":
+        return None
+    return str(display_name)
+
+
+def _resolve_story_fields(
+    fields: dict[str, Any],
+    *,
+    context: TransformContext,
+    project: str,
+) -> tuple[str | None, str | None]:
+    parent_id = fields.get("System.Parent")
+    if parent_id is None:
+        return None, None
+
+    parent_key = int(parent_id)
+    story_name = context.parent_titles.get(parent_key)
+    if story_name is None:
+        return None, None
+
+    return story_name, build_ado_work_item_url(context.organization, project, parent_key)
 
 
 def build_reporting_document(
@@ -43,15 +72,25 @@ def build_reporting_document(
     tags = parse_system_tags(
         str(fields["System.Tags"]) if fields.get("System.Tags") is not None else None
     )
+    project = str(fields["System.TeamProject"])
+    story_name, story_url = _resolve_story_fields(
+        fields,
+        context=context,
+        project=project,
+    )
 
     return {
         "work_item": {
             "id": str(work_item_id),
             "organization": context.organization,
-            "project": str(fields["System.TeamProject"]),
+            "project": project,
             "title": str(fields["System.Title"]),
             "status": str(fields["System.State"]),
             "area_path": str(fields.get("System.AreaPath") or ""),
+            "assignee": _parse_assignee_display_name(fields),
+            "url": build_ado_work_item_url(context.organization, project, work_item_id),
+            "story_name": story_name,
+            "story_url": story_url,
             "created_at": format_ado_datetime(created_at),
             "changed_at": format_ado_datetime(changed_at),
             "closed_at": format_ado_datetime(closed_at_dt) if closed_at_dt else None,

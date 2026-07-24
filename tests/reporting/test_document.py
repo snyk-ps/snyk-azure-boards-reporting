@@ -16,12 +16,17 @@ FIXED_EXPORTED_AT = datetime(2026, 7, 20, 21, 0, 0, tzinfo=timezone.utc)
 FIXED_RUN_ID = "550e8400-e29b-41d4-a716-446655440000"
 
 
-def _context(*, closed_states: frozenset[str] | None = None) -> TransformContext:
+def _context(
+    *,
+    closed_states: frozenset[str] | None = None,
+    parent_titles: dict[int, str] | None = None,
+) -> TransformContext:
     return TransformContext(
         organization="test-org",
         run_id=FIXED_RUN_ID,
         exported_at=FIXED_EXPORTED_AT,
         closed_states=closed_states or frozenset({"Done"}),
+        parent_titles=parent_titles or {},
     )
 
 
@@ -49,6 +54,10 @@ def test_build_reporting_document_golden_item_1_operator_only() -> None:
             "title": "NoSQL Injection",
             "status": "To Do",
             "area_path": "snykDemoProject",
+            "assignee": None,
+            "url": "https://dev.azure.com/test-org/snykDemoProject/_workitems/edit/1",
+            "story_name": None,
+            "story_url": None,
             "created_at": "2026-03-31T18:46:23.540Z",
             "changed_at": "2026-03-31T18:46:23.540Z",
             "closed_at": None,
@@ -65,6 +74,39 @@ def test_build_reporting_document_golden_item_1_operator_only() -> None:
             "exported_at": "2026-07-20T21:00:00.000Z",
         },
     }
+
+
+def test_build_reporting_document_populates_assignee_and_story_fields() -> None:
+    item = _load_smoke_item(1)
+    item["fields"]["System.AssignedTo"] = {"displayName": "Jane Doe"}
+    item["fields"]["System.Parent"] = 500
+
+    document = build_reporting_document(
+        item,
+        context=_context(parent_titles={500: "Checkout hardening"}),
+    )
+
+    assert document["work_item"]["assignee"] == "Jane Doe"
+    assert document["work_item"]["story_name"] == "Checkout hardening"
+    assert document["work_item"]["story_url"] == (
+        "https://dev.azure.com/test-org/snykDemoProject/_workitems/edit/500"
+    )
+    assert document["work_item"]["url"] == (
+        "https://dev.azure.com/test-org/snykDemoProject/_workitems/edit/1"
+    )
+
+
+def test_build_reporting_document_nulls_story_when_parent_title_missing() -> None:
+    item = _load_smoke_item(1)
+    item["fields"]["System.Parent"] = 500
+
+    document = build_reporting_document(item, context=_context())
+
+    assert document["work_item"]["story_name"] is None
+    assert document["work_item"]["story_url"] is None
+    assert document["work_item"]["url"] == (
+        "https://dev.azure.com/test-org/snykDemoProject/_workitems/edit/1"
+    )
 
 
 def test_build_reporting_document_golden_item_9_closed_with_days() -> None:
@@ -150,6 +192,10 @@ def test_smoke_jsonl_records_transform_without_error(line: str) -> None:
         "title",
         "status",
         "area_path",
+        "assignee",
+        "url",
+        "story_name",
+        "story_url",
         "created_at",
         "changed_at",
         "closed_at",

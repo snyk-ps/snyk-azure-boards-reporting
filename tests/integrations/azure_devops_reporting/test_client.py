@@ -106,6 +106,40 @@ def test_get_work_items_batch_enforces_limit() -> None:
         client.get_work_items_batch("example-org", "demo", list(range(201)))
 
 
+def test_get_work_items_batch_accepts_custom_fields() -> None:
+    client = _client(
+        [
+            HttpResponse(
+                status=200,
+                headers={},
+                body=json.dumps(
+                    {
+                        "value": [
+                                {
+                                    "id": 500,
+                                    "fields": {
+                                        "System.Id": 500,
+                                        "System.Title": "Parent story",
+                                        "System.State": "Done",
+                                    },
+                                }
+                        ]
+                    }
+                ).encode("utf-8"),
+            )
+        ]
+    )
+
+    records = client.get_work_items_batch(
+        "example-org",
+        "demo",
+        [500],
+        fields=("System.Id", "System.Title"),
+    )
+
+    assert records[0]["fields"]["System.Title"] == "Parent story"
+
+
 def test_get_work_items_batch_normalizes_items() -> None:
     client = _client(
         [

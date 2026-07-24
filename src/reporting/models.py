@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, TypedDict
 
@@ -19,6 +19,7 @@ class TransformContext:
     run_id: str
     exported_at: datetime
     closed_states: frozenset[str]
+    parent_titles: dict[int, str] = field(default_factory=dict)
 
 
 class TagsParsed(TypedDict):
@@ -39,6 +40,10 @@ class WorkItemDocument(TypedDict):
     title: str
     status: str
     area_path: str
+    assignee: str | None
+    url: str
+    story_name: str | None
+    story_url: str | None
     created_at: str
     changed_at: str
     closed_at: str | None

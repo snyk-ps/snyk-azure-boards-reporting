@@ -37,6 +37,8 @@ azure_devops:
 
 The sample file also documents `reporting.closed_states` for document transform and export.
 
+Export populates `work_item.story_name` and `work_item.story_url` from the immediate parent work item referenced by Azure DevOps **`System.Parent`**. Assignee comes from **`System.AssignedTo.displayName`**; work item and story URLs are constructed for `dev.azure.com` from organization, project, and work item id.
+
 Config path resolution for `export`:
 
 1. `--config <path>` when provided

@@ -8,6 +8,7 @@ from typing import Any
 from config.loader import AzureDevOpsOrganizationConfig, ElasticsearchConfig, ReportingAppConfig
 from export.runner import run_export
 from export.scope import ExportScopeTarget
+from integrations.azure_devops_reporting.models import PARENT_TITLE_BATCH_FIELDS
 from integrations.elasticsearch.models import BulkResult
 
 
@@ -40,9 +41,12 @@ class FakeAdoClient:
         *,
         work_item_ids: list[int] | None = None,
         items_by_batch: dict[tuple[int, ...], list[dict[str, Any]]] | None = None,
+        parent_titles_by_id: dict[int, str] | None = None,
     ) -> None:
         self.work_item_ids = work_item_ids or []
         self.items_by_batch = items_by_batch or {}
+        self.parent_titles_by_id = parent_titles_by_id or {}
+        self.batch_calls: list[tuple[tuple[int, ...], tuple[str, ...] | None]] = []
 
     def query_work_item_ids(
         self,
@@ -60,8 +64,27 @@ class FakeAdoClient:
         organization: str,
         project: str,
         ids: list[int],
+        *,
+        fields: tuple[str, ...] | None = None,
     ) -> list[dict[str, Any]]:
-        return self.items_by_batch.get(tuple(ids), [_valid_item(item_id) for item_id in ids])
+        self.batch_calls.append((tuple(ids), fields))
+        batch_key = tuple(ids)
+        if batch_key in self.items_by_batch:
+            return self.items_by_batch[batch_key]
+        if fields == PARENT_TITLE_BATCH_FIELDS:
+            return [
+                {
+                    "work_item_id": parent_id,
+                    "work_item_status": "Done",
+                    "fields": {
+                        "System.Id": parent_id,
+                        "System.Title": self.parent_titles_by_id[parent_id],
+                    },
+                }
+                for parent_id in ids
+                if parent_id in self.parent_titles_by_id
+            ]
+        return [_valid_item(item_id) for item_id in ids]
 
 
 class FakeEsClient:
@@ -139,6 +162,64 @@ def test_run_export_happy_path() -> None:
     assert es_client.ensure_index_called is True
     assert len(es_client.bulk_calls) == 1
     assert es_client.bulk_calls[0][0]["export"]["run_id"] == FIXED_RUN_ID
+    assert es_client.bulk_calls[0][0]["work_item"]["url"] == (
+        "https://dev.azure.com/test-org/snykDemoProject/_workitems/edit/1"
+    )
+
+
+def test_run_export_hydrates_shared_parent_story_once() -> None:
+    item_one = _valid_item(1)
+    item_one["fields"]["System.Parent"] = 500
+    item_two = _valid_item(2)
+    item_two["fields"]["System.Parent"] = 500
+    ado_client = FakeAdoClient(
+        work_item_ids=[1, 2],
+        items_by_batch={(1, 2): [item_one, item_two]},
+        parent_titles_by_id={500: "Shared story"},
+    )
+    es_client = FakeEsClient(bulk_result=BulkResult(succeeded=2, failed=0))
+
+    result = run_export(
+        config=_config(),
+        scope=_scope(),
+        ado_client=ado_client,
+        es_client=es_client,
+        export_run_id=FIXED_RUN_ID,
+        exported_at=FIXED_EXPORTED_AT,
+    )
+
+    assert result.export_outcome == "success"
+    parent_batch_calls = [
+        call for call in ado_client.batch_calls if call[1] == PARENT_TITLE_BATCH_FIELDS
+    ]
+    assert parent_batch_calls == [((500,), PARENT_TITLE_BATCH_FIELDS)]
+    assert es_client.bulk_calls[0][0]["work_item"]["story_name"] == "Shared story"
+    assert es_client.bulk_calls[0][1]["work_item"]["story_name"] == "Shared story"
+
+
+def test_run_export_leaves_story_null_when_parent_lookup_missing() -> None:
+    item = _valid_item(1)
+    item["fields"]["System.Parent"] = 500
+    ado_client = FakeAdoClient(
+        work_item_ids=[1],
+        items_by_batch={(1,): [item]},
+        parent_titles_by_id={},
+    )
+    es_client = FakeEsClient(bulk_result=BulkResult(succeeded=1, failed=0))
+
+    result = run_export(
+        config=_config(),
+        scope=_scope(),
+        ado_client=ado_client,
+        es_client=es_client,
+        export_run_id=FIXED_RUN_ID,
+        exported_at=FIXED_EXPORTED_AT,
+    )
+
+    assert result.export_outcome == "success"
+    document = es_client.bulk_calls[0][0]
+    assert document["work_item"]["story_name"] is None
+    assert document["work_item"]["story_url"] is None
 
 
 def test_run_export_handles_empty_wiql_results() -> None:

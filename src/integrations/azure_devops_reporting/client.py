@@ -92,6 +92,8 @@ class AzureDevOpsReportingClient:
         organization: str,
         project: str,
         ids: list[int],
+        *,
+        fields: tuple[str, ...] | None = None,
     ) -> list[NormalizedWorkItem]:
         """Hydrate up to 200 work items and return normalized records."""
         org = _require_non_blank(organization, "organization")
@@ -104,12 +106,13 @@ class AzureDevOpsReportingClient:
         if not ids:
             return []
 
+        batch_fields = fields or WORK_ITEM_BATCH_FIELDS
         payload = self._http.request_json(
             "POST",
             f"/{org}/{proj}/_apis/wit/workitemsbatch",
             body={
                 "ids": ids,
-                "fields": list(WORK_ITEM_BATCH_FIELDS),
+                "fields": list(batch_fields),
             },
         )
         normalized: list[NormalizedWorkItem] = []

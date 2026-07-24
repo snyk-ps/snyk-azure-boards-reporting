@@ -10,7 +10,11 @@ from uuid import uuid4
 from config.loader import ReportingAppConfig
 from export.scope import ExportScopeTarget
 from integrations.azure_devops_reporting.client import AzureDevOpsReportingClient
-from integrations.azure_devops_reporting.models import chunk_ids
+from integrations.azure_devops_reporting.models import (
+    PARENT_TITLE_BATCH_FIELDS,
+    NormalizedWorkItem,
+    chunk_ids,
+)
 from integrations.elasticsearch.client import ElasticsearchIngestClient
 from integrations.elasticsearch.mappings import load_index_mappings
 from observability.audit import ExportSummary
@@ -56,12 +60,6 @@ def run_export(
     errors: list[str] = []
 
     for target in scope_targets:
-        context = TransformContext(
-            organization=target.organization,
-            run_id=run_id,
-            exported_at=export_time,
-            closed_states=frozenset(config.closed_states),
-        )
         work_item_ids = ado_client.query_work_item_ids(
             target.organization,
             target.project,
@@ -74,6 +72,19 @@ def run_export(
                 target.organization,
                 target.project,
                 batch_ids,
+            )
+            parent_titles = _hydrate_parent_titles(
+                ado_client,
+                target.organization,
+                target.project,
+                normalized_items,
+            )
+            context = TransformContext(
+                organization=target.organization,
+                run_id=run_id,
+                exported_at=export_time,
+                closed_states=frozenset(config.closed_states),
+                parent_titles=parent_titles,
             )
             documents = []
             for item in normalized_items:
@@ -137,3 +148,35 @@ def _resolve_outcome(*, documents_written: int, documents_failed: int) -> str:
     if documents_written == 0:
         return "failure"
     return "partial"
+
+
+def _hydrate_parent_titles(
+    ado_client: AzureDevOpsReportingClient,
+    organization: str,
+    project: str,
+    items: list[NormalizedWorkItem],
+) -> dict[int, str]:
+    """Batch-fetch parent work item titles referenced by System.Parent."""
+    parent_ids = sorted(
+        {
+            int(item["fields"]["System.Parent"])
+            for item in items
+            if item["fields"].get("System.Parent") is not None
+        }
+    )
+    if not parent_ids:
+        return {}
+
+    parent_titles: dict[int, str] = {}
+    for batch_ids in chunk_ids(parent_ids):
+        parent_items = ado_client.get_work_items_batch(
+            organization,
+            project,
+            batch_ids,
+            fields=PARENT_TITLE_BATCH_FIELDS,
+        )
+        for parent_item in parent_items:
+            title = parent_item["fields"].get("System.Title")
+            if title is not None:
+                parent_titles[parent_item["work_item_id"]] = str(title)
+    return parent_titles
