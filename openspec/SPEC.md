@@ -13,6 +13,7 @@ Copy these into `openspec/specs/` when bootstrapping the reporting repository. N
 | Elasticsearch platform | [`specs/elasticsearch-platform/spec.md`](specs/elasticsearch-platform/spec.md) |
 | Application configuration | [`specs/application-config/spec.md`](specs/application-config/spec.md) |
 | Observability | [`specs/observability/spec.md`](specs/observability/spec.md) |
+| Container deployment (scheduled export jobs) | [`specs/container-deployment/spec.md`](specs/container-deployment/spec.md) |
 | Kibana reporting (v2) | [`specs/kibana-reporting/spec.md`](specs/kibana-reporting/spec.md) |
 
 Functional requirements in this repository use **`R1-FR-*`** IDs. Upstream sync requirements remain **`P2-FR-*`** in [snyk-azure-boards-integration](https://github.com/snyk-ps/snyk-azure-boards-integration) and are cited as external dependencies only.

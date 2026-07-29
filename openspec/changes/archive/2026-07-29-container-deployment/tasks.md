@@ -19,4 +19,4 @@
 
 ## 4. Archive prep
 
-- [ ] 4.1 Merge `openspec/specs/` only when archiving: do **not** copy or merge `openspec/changes/container-deployment/specs/*.md` into `openspec/specs/` during implementation; run `openspec archive container-deployment` when complete
+- [x] 4.1 Merge `openspec/specs/` only when archiving: do **not** copy or merge `openspec/changes/container-deployment/specs/*.md` into `openspec/specs/` during implementation; run `openspec archive container-deployment` when complete
