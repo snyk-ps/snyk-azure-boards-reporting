@@ -1,6 +1,10 @@
 # Configuration reference
 
-Operator reference for configuration files, environment variables, and CLI flags. For installation, usage, and deployment, see the [README](README.md). For layout, tests, OpenSpec, and CI/Docker details, see **[CONTRIBUTING.md](CONTRIBUTING.md)**.
+Operator reference for configuration files, environment variables, and CLI flags. For installation, container images, and Azure deployment, see the [README](README.md). For layout, tests, OpenSpec, and CI/Docker details, see **[CONTRIBUTING.md](CONTRIBUTING.md)**.
+
+Operator settings use a **YAML** file (non-secret policy only). **Secrets** (`AZURE_DEVOPS_PAT`, Elasticsearch credentials, etc.) **must** come from environment variables or your secret store. **Never** commit them in YAML. The shipped container image **defaults** to **`export --config /config/reporting.yaml`**; **`REPORTING_APP_CONFIG`** or CLI **`--config`** still follow the precedence below.
+
+For **Azure Container App Jobs**, inject secrets via Container Apps secrets or Key Vault references mapped to **`AZURE_DEVOPS_PAT`**, **`ELASTICSEARCH_URL`**, and **`ELASTICSEARCH_API_KEY`**. Mount non-secret policy at **`/config/reporting.yaml`**. Production jobs use the image default command and run the **full scope** in mounted YAML — CLI **`--org`**, **`--project`**, and **`--filter-tag`** are for local development and smoke tests only. Portal walkthrough: **[README § Deployment](README.md#deployment)**.
 
 ## Precedence
 

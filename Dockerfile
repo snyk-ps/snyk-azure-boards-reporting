@@ -35,4 +35,6 @@ ENV PATH="/app/.venv/bin:$PATH"
 USER nonroot
 WORKDIR /app
 
-CMD ["python", "src/main.py"]
+# Default: run export; mount operator YAML at /config/reporting.yaml (or override CMD args)
+ENTRYPOINT ["python", "src/main.py"]
+CMD ["export", "--config", "/config/reporting.yaml"]

@@ -133,15 +133,32 @@ The root `Dockerfile` uses a **multi-stage** build: dependencies are installed w
 | Item | Detail |
 | ---- | ------ |
 | Builder | `ghcr.io/astral-sh/uv:python3.12-bookworm-slim` runs `uv sync --locked` using `pyproject.toml` and `uv.lock` (bytecode compile and cache mounts as in the file). |
-| Runtime | `python:3.12-slim-bookworm`; `PATH` includes `/app/.venv/bin`. The process runs as a non-root user (`nonroot`, uid/gid 999). |
-| App layout | Full project is copied into `/app`; the default command is `python src/main.py`. |
+| Runtime | `python:3.12-slim-bookworm`; `PATH` includes `/app/.venv/bin`. The process runs as a non-root user (`nonroot`, uid/gid 999). `PYTHONUNBUFFERED=1` for timely log shipping. |
+| Entrypoint / default command | `ENTRYPOINT ["python", "src/main.py"]`; `CMD ["export", "--config", "/config/reporting.yaml"]`. Override args for smoke subcommands or `--help`. |
+| App layout | Full project is copied into `/app`; operator YAML is **not** baked in — mount at `/config/reporting.yaml` at runtime. |
 | Build context | `.dockerignore` keeps unnecessary paths out of the image build (see that file for the exact list). |
 
 Local build example (from the repository root):
 
 ```bash
-docker build -t myapp:local .
-docker run --rm myapp:local
+docker build -t snyk-azure-boards-reporting:local .
+```
+
+Run the default export (requires secrets and a mounted config file):
+
+```bash
+docker run --rm \
+  -e AZURE_DEVOPS_PAT \
+  -e ELASTICSEARCH_URL \
+  -e ELASTICSEARCH_API_KEY \
+  -v "$(pwd)/data/reporting.sample.yaml:/config/reporting.yaml:ro" \
+  snyk-azure-boards-reporting:local
+```
+
+Show CLI help (overrides default CMD args):
+
+```bash
+docker run --rm snyk-azure-boards-reporting:local --help
 ```
 
 Pass env vars and flags your CLI expects with `docker run -e ...` or your orchestrator's equivalent.
