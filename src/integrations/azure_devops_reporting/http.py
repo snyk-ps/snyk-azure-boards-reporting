@@ -23,6 +23,11 @@ RETRY_BACKOFF_SECONDS = 1.0
 RETRYABLE_STATUS_CODES = frozenset({429, 500, 502, 503, 504})
 
 
+def encode_ado_path_segment(value: str) -> str:
+    """Percent-encode an Azure DevOps URL path segment."""
+    return urllib.parse.quote(value, safe="")
+
+
 @dataclass(frozen=True)
 class HttpResponse:
     """HTTP response returned by a transport."""

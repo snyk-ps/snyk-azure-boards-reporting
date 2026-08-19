@@ -6,7 +6,11 @@ from typing import Any
 
 from integrations.azure_devops_reporting.auth import read_pat_from_environ
 from integrations.azure_devops_reporting.errors import BatchLimitError
-from integrations.azure_devops_reporting.http import AzureDevOpsHttpClient, DEFAULT_ORIGIN
+from integrations.azure_devops_reporting.http import (
+    AzureDevOpsHttpClient,
+    DEFAULT_ORIGIN,
+    encode_ado_path_segment,
+)
 from integrations.azure_devops_reporting.models import (
     MAX_BATCH_SIZE,
     WORK_ITEM_BATCH_FIELDS,
@@ -51,7 +55,7 @@ class AzureDevOpsReportingClient:
 
             payload = self._http.request_json(
                 "GET",
-                f"/{org}/_apis/projects",
+                f"/{encode_ado_path_segment(org)}/_apis/projects",
                 query=query,
             )
             for project in payload.get("value", []):
@@ -81,7 +85,7 @@ class AzureDevOpsReportingClient:
 
         payload = self._http.request_json(
             "POST",
-            f"/{org}/{proj}/_apis/wit/wiql",
+            f"/{encode_ado_path_segment(org)}/{encode_ado_path_segment(proj)}/_apis/wit/wiql",
             body={"query": wiql},
         )
         work_items = payload.get("workItems") or []
@@ -109,7 +113,7 @@ class AzureDevOpsReportingClient:
         batch_fields = fields or WORK_ITEM_BATCH_FIELDS
         payload = self._http.request_json(
             "POST",
-            f"/{org}/{proj}/_apis/wit/workitemsbatch",
+            f"/{encode_ado_path_segment(org)}/{encode_ado_path_segment(proj)}/_apis/wit/workitemsbatch",
             body={
                 "ids": ids,
                 "fields": list(batch_fields),

@@ -14,6 +14,7 @@ class FakeTransport:
 
     def __init__(self, responses: list[HttpResponse]) -> None:
         self.responses = list(responses)
+        self.requests: list[tuple[str, str, dict[str, str], bytes | None]] = []
 
     def request(
         self,
@@ -23,18 +24,20 @@ class FakeTransport:
         headers: dict[str, str],
         body: bytes | None = None,
     ) -> HttpResponse:
+        self.requests.append((method, url, headers, body))
         if not self.responses:
             raise AssertionError("no fake responses configured")
         return self.responses.pop(0)
 
 
-def _client(responses: list[HttpResponse]) -> AzureDevOpsReportingClient:
-    http_client = AzureDevOpsHttpClient("example-pat", transport=FakeTransport(responses))
-    return AzureDevOpsReportingClient(http_client)
+def _client(responses: list[HttpResponse]) -> tuple[AzureDevOpsReportingClient, FakeTransport]:
+    transport = FakeTransport(responses)
+    http_client = AzureDevOpsHttpClient("example-pat", transport=transport)
+    return AzureDevOpsReportingClient(http_client), transport
 
 
 def test_list_projects_paginates() -> None:
-    client = _client(
+    client, _transport = _client(
         [
             HttpResponse(
                 status=200,
@@ -68,7 +71,7 @@ def test_list_projects_paginates() -> None:
 
 
 def test_query_work_item_ids_returns_matching_ids() -> None:
-    client = _client(
+    client, _transport = _client(
         [
             HttpResponse(
                 status=200,
@@ -86,7 +89,7 @@ def test_query_work_item_ids_returns_matching_ids() -> None:
 
 
 def test_query_work_item_ids_returns_empty_list() -> None:
-    client = _client(
+    client, _transport = _client(
         [
             HttpResponse(
                 status=200,
@@ -100,14 +103,14 @@ def test_query_work_item_ids_returns_empty_list() -> None:
 
 
 def test_get_work_items_batch_enforces_limit() -> None:
-    client = _client([])
+    client, _transport = _client([])
 
     with pytest.raises(BatchLimitError):
         client.get_work_items_batch("example-org", "demo", list(range(201)))
 
 
 def test_get_work_items_batch_accepts_custom_fields() -> None:
-    client = _client(
+    client, _transport = _client(
         [
             HttpResponse(
                 status=200,
@@ -141,7 +144,7 @@ def test_get_work_items_batch_accepts_custom_fields() -> None:
 
 
 def test_get_work_items_batch_normalizes_items() -> None:
-    client = _client(
+    client, _transport = _client(
         [
             HttpResponse(
                 status=200,
@@ -177,3 +180,54 @@ def test_get_work_items_batch_normalizes_items() -> None:
             },
         }
     ]
+
+
+def test_list_projects_encodes_organization_path_segment() -> None:
+    client, transport = _client(
+        [
+            HttpResponse(
+                status=200,
+                headers={},
+                body=json.dumps({"value": [], "continuationToken": None}).encode("utf-8"),
+            )
+        ]
+    )
+
+    client.list_projects("test org")
+
+    _method, url, _headers, _body = transport.requests[0]
+    assert "/test%20org/_apis/projects" in url
+
+
+def test_query_work_item_ids_encodes_org_and_project_path_segments() -> None:
+    client, transport = _client(
+        [
+            HttpResponse(
+                status=200,
+                headers={},
+                body=json.dumps({"workItems": []}).encode("utf-8"),
+            )
+        ]
+    )
+
+    client.query_work_item_ids("test org", "Project Name", "Snyk")
+
+    _method, url, _headers, _body = transport.requests[0]
+    assert "/test%20org/Project%20Name/_apis/wit/wiql" in url
+
+
+def test_get_work_items_batch_encodes_org_and_project_path_segments() -> None:
+    client, transport = _client(
+        [
+            HttpResponse(
+                status=200,
+                headers={},
+                body=json.dumps({"value": []}).encode("utf-8"),
+            )
+        ]
+    )
+
+    client.get_work_items_batch("test org", "Project Name", [1001])
+
+    _method, url, _headers, _body = transport.requests[0]
+    assert "/test%20org/Project%20Name/_apis/wit/workitemsbatch" in url

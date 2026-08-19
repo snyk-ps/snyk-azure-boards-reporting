@@ -5,7 +5,11 @@ import json
 import pytest
 
 from integrations.azure_devops_reporting.errors import AuthenticationError, AzureDevOpsHttpError
-from integrations.azure_devops_reporting.http import AzureDevOpsHttpClient, HttpResponse
+from integrations.azure_devops_reporting.http import (
+    AzureDevOpsHttpClient,
+    HttpResponse,
+    encode_ado_path_segment,
+)
 
 
 class FakeTransport:
@@ -27,6 +31,16 @@ class FakeTransport:
         if not self.responses:
             raise AssertionError("no fake responses configured")
         return self.responses.pop(0)
+
+
+def test_encode_ado_path_segment_percent_encodes_spaces() -> None:
+    assert encode_ado_path_segment("Project Name") == "Project%20Name"
+    assert encode_ado_path_segment("test org") == "test%20org"
+
+
+def test_encode_ado_path_segment_leaves_url_safe_names_unchanged() -> None:
+    assert encode_ado_path_segment("torstencannell") == "torstencannell"
+    assert encode_ado_path_segment("snykDemoProject") == "snykDemoProject"
 
 
 def test_request_json_includes_api_version_and_authorization() -> None:
