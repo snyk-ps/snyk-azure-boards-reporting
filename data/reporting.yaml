@@ -1,0 +1,15 @@
+azure_devops:
+  organizations:
+    - name: torstencannell
+      filter_tag: Snyk
+      projects:
+        - snykDemoProject
+
+reporting:
+  closed_states:
+    - Done
+  upstream_contract_version: 1
+
+elasticsearch:
+  index_name: snyk-ado-work-items
+  auto_create_index: true
