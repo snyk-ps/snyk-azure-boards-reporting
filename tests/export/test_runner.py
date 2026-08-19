@@ -270,8 +270,13 @@ def test_run_export_counts_bulk_failures_as_partial() -> None:
         work_item_ids=[1],
         items_by_batch={(1,): [_valid_item(1)]},
     )
+    bulk_failure = BulkItemFailure(
+        document_id="test-org:snykDemoProject:1",
+        error_type="mapper_parsing_exception",
+        reason="failed to parse field",
+    )
     es_client = FakeEsClient(
-        bulk_result=BulkResult(succeeded=0, failed=1, errors=("bulk line failed",)),
+        bulk_result=BulkResult(succeeded=0, failed=1, errors=(bulk_failure,)),
     )
 
     result = run_export(
@@ -286,6 +291,9 @@ def test_run_export_counts_bulk_failures_as_partial() -> None:
     assert result.export_outcome == "failure"
     assert result.documents_written == 0
     assert result.documents_failed == 1
+    assert result.errors == (
+        "test-org:snykDemoProject:1: mapper_parsing_exception: failed to parse field",
+    )
 
 
 def test_run_export_skips_ensure_index_when_auto_create_disabled() -> None:

@@ -17,6 +17,7 @@ from integrations.azure_devops_reporting.models import (
 )
 from integrations.elasticsearch.client import ElasticsearchIngestClient
 from integrations.elasticsearch.mappings import load_index_mappings
+from integrations.elasticsearch.models import format_bulk_item_failure
 from observability.audit import ExportSummary
 from reporting.document import build_reporting_document
 from reporting.models import TransformContext, TransformError
@@ -103,7 +104,7 @@ def run_export(
             documents_failed += bulk_result.failed
             for bulk_error in bulk_result.errors:
                 if len(errors) < 10:
-                    errors.append(bulk_error)
+                    errors.append(format_bulk_item_failure(bulk_error))
 
     organizations_processed = len({target.organization for target in scope_targets})
     export_outcome = _resolve_outcome(

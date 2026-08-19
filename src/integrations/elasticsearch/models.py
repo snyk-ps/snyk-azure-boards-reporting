@@ -14,6 +14,11 @@ class BulkItemFailure:
     reason: str
 
 
+def format_bulk_item_failure(failure: BulkItemFailure) -> str:
+    """Format a bulk item failure for export summary error logs."""
+    return f"{failure.document_id}: {failure.error_type}: {failure.reason}"
+
+
 @dataclass(frozen=True)
 class BulkResult:
     """Aggregated bulk upsert outcome."""

@@ -3,6 +3,7 @@
 import io
 import json
 
+from export.runner import to_export_summary
 from observability.audit import (
     AuditingTransport,
     ExportSummary,
@@ -10,6 +11,7 @@ from observability.audit import (
     emit_integration_http,
 )
 from integrations.azure_devops_reporting.http import HttpResponse
+from integrations.elasticsearch.models import BulkItemFailure
 
 
 class FakeTransport:
@@ -63,6 +65,42 @@ def test_emit_export_summary_writes_required_fields() -> None:
     assert record["documents_written"] == 9
     assert record["documents_failed"] == 1
     assert record["errors"] == ["bulk line failed"]
+
+
+def test_emit_export_summary_serializes_bulk_failure_strings_from_run_result() -> None:
+    bulk_failure = BulkItemFailure(
+        document_id="test-org:snykDemoProject:1",
+        error_type="mapper_parsing_exception",
+        reason="failed to parse field",
+    )
+    summary = to_export_summary(
+        type(
+            "ExportRunResult",
+            (),
+            {
+                "export_run_id": "run-1",
+                "export_outcome": "failure",
+                "organizations_processed": 1,
+                "projects_processed": 1,
+                "work_items_discovered": 1,
+                "documents_written": 0,
+                "documents_failed": 1,
+                "errors": (
+                    f"{bulk_failure.document_id}: {bulk_failure.error_type}: {bulk_failure.reason}",
+                ),
+            },
+        )(),
+        export_duration_seconds=1.5,
+    )
+    output = io.StringIO()
+
+    emit_export_summary(summary, output=output)
+
+    record = json.loads(output.getvalue())["record"]
+    assert record["export_outcome"] == "failure"
+    assert record["errors"] == [
+        "test-org:snykDemoProject:1: mapper_parsing_exception: failed to parse field",
+    ]
 
 
 def test_auditing_transport_emits_integration_http_record() -> None:
