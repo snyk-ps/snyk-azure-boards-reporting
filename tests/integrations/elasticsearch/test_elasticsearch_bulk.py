@@ -11,6 +11,7 @@ from integrations.elasticsearch.bulk import (
     parse_bulk_response,
 )
 from integrations.elasticsearch.errors import BulkDocumentError
+from integrations.elasticsearch.models import BulkItemFailure, format_bulk_item_failure
 
 
 def test_document_id_builds_stable_key() -> None:
@@ -83,3 +84,16 @@ def test_parse_bulk_response_counts_success_and_failure() -> None:
     assert result.succeeded == 1
     assert result.failed == 1
     assert result.errors[0].document_id == "b"
+
+
+def test_format_bulk_item_failure() -> None:
+    failure = BulkItemFailure(
+        document_id="org:proj:1",
+        error_type="mapper_parsing_exception",
+        reason="failed to parse",
+    )
+
+    assert (
+        format_bulk_item_failure(failure)
+        == "org:proj:1: mapper_parsing_exception: failed to parse"
+    )

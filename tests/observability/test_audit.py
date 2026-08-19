@@ -3,7 +3,7 @@
 import io
 import json
 
-from export.runner import to_export_summary
+from export.runner import ExportRunResult, to_export_summary
 from observability.audit import (
     AuditingTransport,
     ExportSummary,
@@ -11,7 +11,7 @@ from observability.audit import (
     emit_integration_http,
 )
 from integrations.azure_devops_reporting.http import HttpResponse
-from integrations.elasticsearch.models import BulkItemFailure
+from integrations.elasticsearch.models import BulkItemFailure, format_bulk_item_failure
 
 
 class FakeTransport:
@@ -74,22 +74,16 @@ def test_emit_export_summary_serializes_bulk_failure_strings_from_run_result() -
         reason="failed to parse field",
     )
     summary = to_export_summary(
-        type(
-            "ExportRunResult",
-            (),
-            {
-                "export_run_id": "run-1",
-                "export_outcome": "failure",
-                "organizations_processed": 1,
-                "projects_processed": 1,
-                "work_items_discovered": 1,
-                "documents_written": 0,
-                "documents_failed": 1,
-                "errors": (
-                    f"{bulk_failure.document_id}: {bulk_failure.error_type}: {bulk_failure.reason}",
-                ),
-            },
-        )(),
+        ExportRunResult(
+            export_run_id="run-1",
+            export_outcome="failure",
+            organizations_processed=1,
+            projects_processed=1,
+            work_items_discovered=1,
+            documents_written=0,
+            documents_failed=1,
+            errors=(format_bulk_item_failure(bulk_failure),),
+        ),
         export_duration_seconds=1.5,
     )
     output = io.StringIO()

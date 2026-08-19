@@ -9,7 +9,7 @@ from config.loader import AzureDevOpsOrganizationConfig, ElasticsearchConfig, Re
 from export.runner import run_export
 from export.scope import ExportScopeTarget
 from integrations.azure_devops_reporting.models import PARENT_TITLE_BATCH_FIELDS
-from integrations.elasticsearch.models import BulkResult
+from integrations.elasticsearch.models import BulkItemFailure, BulkResult
 
 
 FIXED_EXPORTED_AT = datetime(2026, 7, 21, 3, 0, 0, tzinfo=timezone.utc)
